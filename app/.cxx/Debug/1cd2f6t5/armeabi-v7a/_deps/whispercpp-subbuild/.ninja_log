@@ -1,0 +1,21 @@
+# ninja log v5
+0	229	7855923011586907	whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-mkdir	cc768bb8a7fbf170
+0	229	7855923011586907	C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-mkdir	cc768bb8a7fbf170
+230	13767	7855923146842950	whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-download	87096c1150498ac5
+230	13767	7855923146842950	C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-download	87096c1150498ac5
+13770	16262	0	whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-update	417be8648c418ccd
+13770	16262	0	C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-update	417be8648c418ccd
+16262	16332	7855923172600724	whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-patch	aff20958b239d11a
+16262	16332	7855923172600724	C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-patch	aff20958b239d11a
+16332	16403	7855923173320028	whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-configure	733dfe5aa9a732d1
+16332	16403	7855923173320028	C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-configure	733dfe5aa9a732d1
+16403	16476	7855923174044373	whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-build	5fa73846103fb77e
+16403	16476	7855923174044373	C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-build	5fa73846103fb77e
+16477	16549	7855923174773037	whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-install	38bc110cdbc4f1bd
+16477	16549	7855923174773037	C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-install	38bc110cdbc4f1bd
+16549	16619	7855923175469348	whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-test	8823668158319f6f
+16549	16619	7855923175469348	C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-test	8823668158319f6f
+16619	16716	7855923176435892	CMakeFiles/whispercpp-populate-complete	e9f721e11685fae0
+16619	16716	7855923176435892	whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-done	e9f721e11685fae0
+16619	16716	7855923176435892	C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/CMakeFiles/whispercpp-populate-complete	e9f721e11685fae0
+16619	16716	7855923176435892	C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-done	e9f721e11685fae0

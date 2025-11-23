@@ -1,0 +1,24 @@
+R_DEF: Internal format may change without notice
+local
+color md_theme_background
+color md_theme_onBackground
+color md_theme_onPrimary
+color md_theme_onPrimaryContainer
+color md_theme_onSecondary
+color md_theme_onSecondaryContainer
+color md_theme_onSurface
+color md_theme_primary
+color md_theme_primaryContainer
+color md_theme_secondary
+color md_theme_secondaryContainer
+color md_theme_surface
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+mipmap ic_launcher
+mipmap ic_launcher_round
+string accessibility_service_description
+string app_name
+style Theme.ThreeSixZeroConnect
+xml backup_rules
+xml call_accessibility_service
+xml data_extraction_rules

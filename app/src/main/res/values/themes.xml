@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.ThreeSixZeroConnect" parent="Theme.Material3.DayNight">
+
+        <!-- Remove ActionBar manually -->
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+
+        <!-- Status bar -->
+        <item name="android:statusBarColor"
+            tools:targetApi="l">@color/md_theme_background</item>
+
+        <!-- Material3 color mapping -->
+        <item name="colorPrimary">@color/md_theme_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
+
+    </style>
+
+</resources>

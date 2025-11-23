@@ -1,0 +1,3 @@
+C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/arm64-v8a/_deps/whispercpp-subbuild/CMakeFiles/whispercpp-populate.dir
+C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/arm64-v8a/_deps/whispercpp-subbuild/CMakeFiles/edit_cache.dir
+C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/arm64-v8a/_deps/whispercpp-subbuild/CMakeFiles/rebuild_cache.dir

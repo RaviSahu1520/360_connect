@@ -1,0 +1,6 @@
+C:\Users\ravi7\OneDrive\Desktop\360_connect\app\.cxx\Debug\1cd2f6t5\armeabi-v7a\_deps\whispercpp-src\CMakeLists.txt
+C:\Users\ravi7\OneDrive\Desktop\360_connect\app\.cxx\Debug\1cd2f6t5\armeabi-v7a\_deps\whispercpp-src\ggml\CMakeLists.txt
+C:\Users\ravi7\OneDrive\Desktop\360_connect\app\.cxx\Debug\1cd2f6t5\armeabi-v7a\_deps\whispercpp-src\ggml\src\CMakeLists.txt
+C:\Users\ravi7\OneDrive\Desktop\360_connect\app\.cxx\Debug\1cd2f6t5\armeabi-v7a\_deps\whispercpp-src\ggml\src\ggml-cpu\CMakeLists.txt
+C:\Users\ravi7\OneDrive\Desktop\360_connect\app\.cxx\Debug\1cd2f6t5\armeabi-v7a\_deps\whispercpp-src\src\CMakeLists.txt
+C:\Users\ravi7\OneDrive\Desktop\360_connect\app\src\main\cpp\CMakeLists.txt

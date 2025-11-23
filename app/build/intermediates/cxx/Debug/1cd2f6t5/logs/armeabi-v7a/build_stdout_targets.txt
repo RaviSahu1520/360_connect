@@ -1,0 +1,2 @@
+ninja: Entering directory `C:\Users\ravi7\OneDrive\Desktop\360_connect\app\.cxx\Debug\1cd2f6t5\armeabi-v7a'
+ninja: no work to do.

@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/CMakeFiles/whispercpp-populate"
+		},
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/CMakeFiles/whispercpp-populate.rule"
+		},
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/CMakeFiles/whispercpp-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/1cd2f6t5/armeabi-v7a/_deps/whispercpp-subbuild/whispercpp-populate-prefix/src/whispercpp-populate-stamp/whispercpp-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"whispercpp-populate"
+		],
+		"name" : "whispercpp-populate"
+	}
+}

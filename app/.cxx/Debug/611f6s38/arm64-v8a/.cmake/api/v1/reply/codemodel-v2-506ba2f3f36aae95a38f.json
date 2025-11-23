@@ -1,0 +1,211 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"build" : "_deps/whispercpp-build",
+					"childIndexes" : 
+					[
+						2,
+						5
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.whispercpp-build-Debug-c22f7e15202d08ddc72a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/611f6s38/arm64-v8a/_deps/whispercpp-src"
+				},
+				{
+					"build" : "_deps/whispercpp-build/ggml",
+					"childIndexes" : 
+					[
+						3
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.whispercpp-build.ggml-Debug-4f441a64d1469d66b971.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 2,
+					"source" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/611f6s38/arm64-v8a/_deps/whispercpp-src/ggml"
+				},
+				{
+					"build" : "_deps/whispercpp-build/ggml/src",
+					"childIndexes" : 
+					[
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.whispercpp-build.ggml.src-Debug-33e3689e8c807e9f9b3e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 2,
+					"source" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/611f6s38/arm64-v8a/_deps/whispercpp-src/ggml/src",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				},
+				{
+					"build" : "_deps/whispercpp-build/ggml/src/ggml-cpu",
+					"jsonFile" : "directory-_deps.whispercpp-build.ggml.src.ggml-cpu-Debug-86a3202498aca926c3fd.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 2,
+					"source" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/611f6s38/arm64-v8a/_deps/whispercpp-src/ggml/src/ggml-cpu"
+				},
+				{
+					"build" : "_deps/whispercpp-build/src",
+					"jsonFile" : "directory-_deps.whispercpp-build.src-Debug-28a1035682be7d35c0db.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/611f6s38/arm64-v8a/_deps/whispercpp-src/src",
+					"targetIndexes" : 
+					[
+						3
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "whisper_wrapper",
+					"targetIndexes" : 
+					[
+						4
+					]
+				},
+				{
+					"childIndexes" : 
+					[
+						2
+					],
+					"directoryIndexes" : 
+					[
+						1,
+						5
+					],
+					"name" : "whisper.cpp",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3,
+						4
+					],
+					"name" : "ggml",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 3,
+					"id" : "ggml::@8dc812d35f23b3704781",
+					"jsonFile" : "target-ggml-Debug-898f1a59542c5306e7a6.json",
+					"name" : "ggml",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "ggml-base::@8dc812d35f23b3704781",
+					"jsonFile" : "target-ggml-base-Debug-6a1bb36df878da4e905d.json",
+					"name" : "ggml-base",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "ggml-cpu::@8dc812d35f23b3704781",
+					"jsonFile" : "target-ggml-cpu-Debug-a33e2ee3aee97a3dff27.json",
+					"name" : "ggml-cpu",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "whisper::@1c8dd6753170a826aa63",
+					"jsonFile" : "target-whisper-Debug-e14f6f4343dcdcdfc049.json",
+					"name" : "whisper",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "whisper_wrapper::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-whisper_wrapper-Debug-9d00b6a6b7d8da564d7e.json",
+					"name" : "whisper_wrapper",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/.cxx/Debug/611f6s38/arm64-v8a",
+		"source" : "C:/Users/ravi7/OneDrive/Desktop/360_connect/app/src/main/cpp"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

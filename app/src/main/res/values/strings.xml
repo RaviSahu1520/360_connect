@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">360 Connect</string>
+    <string name="accessibility_service_description">Detects phone call notifications to start and stop secure call recording.</string>
+</resources>

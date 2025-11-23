@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.company.app-mergeDebugResources-80:/values-v16/values-v16.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\ravi7\\.gradle\\caches\\8.13\\transforms\\649ab47473eb1dbaecf178811415c703\\transformed\\appcompat-1.6.1\\res\\values-v16\\values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "12",
+                        "endOffsets": "223"
+                    }
+                }
+            ]
+        }
+    ]
+}
