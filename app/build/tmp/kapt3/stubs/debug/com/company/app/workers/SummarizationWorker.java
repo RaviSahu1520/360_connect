@@ -1,10 +1,10 @@
 package com.company.app.workers;
 
-@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000,\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0002\b\u0003\b\u0007\u0018\u0000 \u000e2\u00020\u0001:\u0001\u000eB+\b\u0007\u0012\b\b\u0001\u0010\u0002\u001a\u00020\u0003\u0012\b\b\u0001\u0010\u0004\u001a\u00020\u0005\u0012\u0006\u0010\u0006\u001a\u00020\u0007\u0012\u0006\u0010\b\u001a\u00020\t\u00a2\u0006\u0002\u0010\nJ\u000e\u0010\u000b\u001a\u00020\fH\u0096@\u00a2\u0006\u0002\u0010\rR\u000e\u0010\u0006\u001a\u00020\u0007X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\b\u001a\u00020\tX\u0082\u0004\u00a2\u0006\u0002\n\u0000\u00a8\u0006\u000f"}, d2 = {"Lcom/company/app/workers/SummarizationWorker;", "Landroidx/work/CoroutineWorker;", "appContext", "Landroid/content/Context;", "workerParams", "Landroidx/work/WorkerParameters;", "llm", "Lcom/company/app/data/ai/engine/MediaPipeLLM;", "transcriptDao", "Lcom/company/app/data/local/dao/TranscriptDao;", "(Landroid/content/Context;Landroidx/work/WorkerParameters;Lcom/company/app/data/ai/engine/MediaPipeLLM;Lcom/company/app/data/local/dao/TranscriptDao;)V", "doWork", "Landroidx/work/ListenableWorker$Result;", "(Lkotlin/coroutines/Continuation;)Ljava/lang/Object;", "Companion", "app_debug"})
+@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000,\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0002\b\u0003\b\u0007\u0018\u0000 \u000e2\u00020\u0001:\u0001\u000eB+\b\u0007\u0012\b\b\u0001\u0010\u0002\u001a\u00020\u0003\u0012\b\b\u0001\u0010\u0004\u001a\u00020\u0005\u0012\u0006\u0010\u0006\u001a\u00020\u0007\u0012\u0006\u0010\b\u001a\u00020\t\u00a2\u0006\u0002\u0010\nJ\u000e\u0010\u000b\u001a\u00020\fH\u0096@\u00a2\u0006\u0002\u0010\rR\u000e\u0010\u0006\u001a\u00020\u0007X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\b\u001a\u00020\tX\u0082\u0004\u00a2\u0006\u0002\n\u0000\u00a8\u0006\u000f"}, d2 = {"Lcom/company/app/workers/SummarizationWorker;", "Landroidx/work/CoroutineWorker;", "appContext", "Landroid/content/Context;", "workerParams", "Landroidx/work/WorkerParameters;", "llmEngine", "Lcom/company/app/data/remote/llm/LLMEngine;", "transcriptDao", "Lcom/company/app/data/local/dao/TranscriptDao;", "(Landroid/content/Context;Landroidx/work/WorkerParameters;Lcom/company/app/data/remote/llm/LLMEngine;Lcom/company/app/data/local/dao/TranscriptDao;)V", "doWork", "Landroidx/work/ListenableWorker$Result;", "(Lkotlin/coroutines/Continuation;)Ljava/lang/Object;", "Companion", "app_debug"})
 @androidx.hilt.work.HiltWorker()
 public final class SummarizationWorker extends androidx.work.CoroutineWorker {
     @org.jetbrains.annotations.NotNull()
-    private final com.company.app.data.ai.engine.MediaPipeLLM llm = null;
+    private final com.company.app.data.remote.llm.LLMEngine llmEngine = null;
     @org.jetbrains.annotations.NotNull()
     private final com.company.app.data.local.dao.TranscriptDao transcriptDao = null;
     @org.jetbrains.annotations.NotNull()
@@ -21,7 +21,7 @@ public final class SummarizationWorker extends androidx.work.CoroutineWorker {
     android.content.Context appContext, @dagger.assisted.Assisted()
     @org.jetbrains.annotations.NotNull()
     androidx.work.WorkerParameters workerParams, @org.jetbrains.annotations.NotNull()
-    com.company.app.data.ai.engine.MediaPipeLLM llm, @org.jetbrains.annotations.NotNull()
+    com.company.app.data.remote.llm.LLMEngine llmEngine, @org.jetbrains.annotations.NotNull()
     com.company.app.data.local.dao.TranscriptDao transcriptDao) {
         super(null, null);
     }

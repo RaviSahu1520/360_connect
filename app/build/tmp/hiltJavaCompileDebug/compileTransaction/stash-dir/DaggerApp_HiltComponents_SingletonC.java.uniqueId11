@@ -1,0 +1,989 @@
+package com.company.app;
+
+import android.app.Activity;
+import android.app.Service;
+import android.view.View;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.SavedStateHandle;
+import androidx.lifecycle.ViewModel;
+import com.company.app.core.common.DispatcherProvider;
+import com.company.app.core.di.AIModule_ProvideEmbeddingConvertersFactory;
+import com.company.app.core.di.AIModule_ProvideEmbeddingDaoFactory;
+import com.company.app.core.di.AIModule_ProvideLLMEngineFactory;
+import com.company.app.core.di.AIModule_ProvideVectorStoreFactory;
+import com.company.app.core.di.DatabaseModule_ProvideCallDaoFactory;
+import com.company.app.core.di.DatabaseModule_ProvideDatabaseFactory;
+import com.company.app.core.di.DatabaseModule_ProvideEncryptionManagerFactory;
+import com.company.app.core.di.DatabaseModule_ProvideMessageDaoFactory;
+import com.company.app.core.di.DatabaseModule_ProvideTranscriptDaoFactory;
+import com.company.app.core.di.DispatcherModule_ProvideDispatchersFactory;
+import com.company.app.core.di.NetworkModule_ProvideOkHttpClientFactory;
+import com.company.app.core.di.NetworkModule_ProvideSignalingClientFactory;
+import com.company.app.core.security.EncryptionManager;
+import com.company.app.core.util.AssetExtractor;
+import com.company.app.core.util.AudioDecoder;
+import com.company.app.data.ai.engine.TFLiteEmbedder;
+import com.company.app.data.ai.engine.WhisperEngine;
+import com.company.app.data.ai.manager.ModelDownloadManager;
+import com.company.app.data.local.dao.CallDao;
+import com.company.app.data.local.dao.EmbeddingDao;
+import com.company.app.data.local.dao.MessageDao;
+import com.company.app.data.local.dao.TranscriptDao;
+import com.company.app.data.local.db.AppDatabase;
+import com.company.app.data.local.vector.EmbeddingConverters;
+import com.company.app.data.local.vector.VectorStore;
+import com.company.app.data.remote.SignalingClient;
+import com.company.app.data.remote.llm.LLMEngine;
+import com.company.app.data.repository.AIRepositoryImpl;
+import com.company.app.data.repository.CallRepositoryImpl;
+import com.company.app.data.repository.ChatRepositoryImpl;
+import com.company.app.domain.repository.AIRepository;
+import com.company.app.domain.repository.CallRepository;
+import com.company.app.domain.repository.ChatRepository;
+import com.company.app.domain.usecase.ai.CallScopedRAGQueryUseCase;
+import com.company.app.domain.usecase.ai.RagQueryUseCase;
+import com.company.app.domain.usecase.ai.TranscribeCallUseCase;
+import com.company.app.domain.usecase.call.GetCallDetailUseCase;
+import com.company.app.domain.usecase.call.GetCallHistoryUseCase;
+import com.company.app.domain.usecase.call.ObserveCallsUseCase;
+import com.company.app.domain.usecase.call.StartRecordingUseCase;
+import com.company.app.domain.usecase.call.StopRecordingUseCase;
+import com.company.app.domain.usecase.chat.ObserveChatMessagesUseCase;
+import com.company.app.domain.usecase.chat.SendMessageUseCase;
+import com.company.app.platform.call.CallNotificationListenerService;
+import com.company.app.platform.call.VoipClient;
+import com.company.app.platform.call.VoipSignalingService;
+import com.company.app.platform.call.VoipSignalingService_MembersInjector;
+import com.company.app.platform.recording.AudioCaptureManager;
+import com.company.app.platform.recording.CallRecordingController;
+import com.company.app.platform.recording.CallRecordingService;
+import com.company.app.platform.recording.CallRecordingService_MembersInjector;
+import com.company.app.presentation.MainActivity;
+import com.company.app.presentation.MainActivity_MembersInjector;
+import com.company.app.presentation.ai.AskAiViewModel;
+import com.company.app.presentation.ai.AskAiViewModel_HiltModules;
+import com.company.app.presentation.call.CallViewModel;
+import com.company.app.presentation.call.CallViewModel_HiltModules;
+import com.company.app.presentation.chat.ChatViewModel;
+import com.company.app.presentation.chat.ChatViewModel_HiltModules;
+import com.company.app.presentation.history.CallDetailViewModel;
+import com.company.app.presentation.history.CallDetailViewModel_HiltModules;
+import com.company.app.presentation.history.CallHistoryViewModel;
+import com.company.app.presentation.history.CallHistoryViewModel_HiltModules;
+import com.company.app.presentation.home.HomeViewModel;
+import com.company.app.presentation.home.HomeViewModel_HiltModules;
+import com.company.app.presentation.permissions.PermissionsManager;
+import com.company.app.presentation.settings.SettingsViewModel;
+import com.company.app.presentation.settings.SettingsViewModel_HiltModules;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import dagger.hilt.android.ActivityRetainedLifecycle;
+import dagger.hilt.android.ViewModelLifecycle;
+import dagger.hilt.android.internal.builders.ActivityComponentBuilder;
+import dagger.hilt.android.internal.builders.ActivityRetainedComponentBuilder;
+import dagger.hilt.android.internal.builders.FragmentComponentBuilder;
+import dagger.hilt.android.internal.builders.ServiceComponentBuilder;
+import dagger.hilt.android.internal.builders.ViewComponentBuilder;
+import dagger.hilt.android.internal.builders.ViewModelComponentBuilder;
+import dagger.hilt.android.internal.builders.ViewWithFragmentComponentBuilder;
+import dagger.hilt.android.internal.lifecycle.DefaultViewModelFactories;
+import dagger.hilt.android.internal.lifecycle.DefaultViewModelFactories_InternalFactoryFactory_Factory;
+import dagger.hilt.android.internal.managers.ActivityRetainedComponentManager_LifecycleModule_ProvideActivityRetainedLifecycleFactory;
+import dagger.hilt.android.internal.managers.SavedStateHandleHolder;
+import dagger.hilt.android.internal.modules.ApplicationContextModule;
+import dagger.hilt.android.internal.modules.ApplicationContextModule_ProvideContextFactory;
+import dagger.internal.DaggerGenerated;
+import dagger.internal.DoubleCheck;
+import dagger.internal.IdentifierNameString;
+import dagger.internal.KeepFieldType;
+import dagger.internal.LazyClassKeyMap;
+import dagger.internal.Preconditions;
+import dagger.internal.Provider;
+import java.util.Map;
+import java.util.Set;
+import javax.annotation.processing.Generated;
+import okhttp3.OkHttpClient;
+
+@DaggerGenerated
+@Generated(
+    value = "dagger.internal.codegen.ComponentProcessor",
+    comments = "https://dagger.dev"
+)
+@SuppressWarnings({
+    "unchecked",
+    "rawtypes",
+    "KotlinInternal",
+    "KotlinInternalInJava",
+    "cast",
+    "deprecation"
+})
+public final class DaggerApp_HiltComponents_SingletonC {
+  private DaggerApp_HiltComponents_SingletonC() {
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static final class Builder {
+    private ApplicationContextModule applicationContextModule;
+
+    private Builder() {
+    }
+
+    public Builder applicationContextModule(ApplicationContextModule applicationContextModule) {
+      this.applicationContextModule = Preconditions.checkNotNull(applicationContextModule);
+      return this;
+    }
+
+    public App_HiltComponents.SingletonC build() {
+      Preconditions.checkBuilderRequirement(applicationContextModule, ApplicationContextModule.class);
+      return new SingletonCImpl(applicationContextModule);
+    }
+  }
+
+  private static final class ActivityRetainedCBuilder implements App_HiltComponents.ActivityRetainedC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private SavedStateHandleHolder savedStateHandleHolder;
+
+    private ActivityRetainedCBuilder(SingletonCImpl singletonCImpl) {
+      this.singletonCImpl = singletonCImpl;
+    }
+
+    @Override
+    public ActivityRetainedCBuilder savedStateHandleHolder(
+        SavedStateHandleHolder savedStateHandleHolder) {
+      this.savedStateHandleHolder = Preconditions.checkNotNull(savedStateHandleHolder);
+      return this;
+    }
+
+    @Override
+    public App_HiltComponents.ActivityRetainedC build() {
+      Preconditions.checkBuilderRequirement(savedStateHandleHolder, SavedStateHandleHolder.class);
+      return new ActivityRetainedCImpl(singletonCImpl, savedStateHandleHolder);
+    }
+  }
+
+  private static final class ActivityCBuilder implements App_HiltComponents.ActivityC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private Activity activity;
+
+    private ActivityCBuilder(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+    }
+
+    @Override
+    public ActivityCBuilder activity(Activity activity) {
+      this.activity = Preconditions.checkNotNull(activity);
+      return this;
+    }
+
+    @Override
+    public App_HiltComponents.ActivityC build() {
+      Preconditions.checkBuilderRequirement(activity, Activity.class);
+      return new ActivityCImpl(singletonCImpl, activityRetainedCImpl, activity);
+    }
+  }
+
+  private static final class FragmentCBuilder implements App_HiltComponents.FragmentC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private Fragment fragment;
+
+    private FragmentCBuilder(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, ActivityCImpl activityCImpl) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+    }
+
+    @Override
+    public FragmentCBuilder fragment(Fragment fragment) {
+      this.fragment = Preconditions.checkNotNull(fragment);
+      return this;
+    }
+
+    @Override
+    public App_HiltComponents.FragmentC build() {
+      Preconditions.checkBuilderRequirement(fragment, Fragment.class);
+      return new FragmentCImpl(singletonCImpl, activityRetainedCImpl, activityCImpl, fragment);
+    }
+  }
+
+  private static final class ViewWithFragmentCBuilder implements App_HiltComponents.ViewWithFragmentC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private final FragmentCImpl fragmentCImpl;
+
+    private View view;
+
+    private ViewWithFragmentCBuilder(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, ActivityCImpl activityCImpl,
+        FragmentCImpl fragmentCImpl) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+      this.fragmentCImpl = fragmentCImpl;
+    }
+
+    @Override
+    public ViewWithFragmentCBuilder view(View view) {
+      this.view = Preconditions.checkNotNull(view);
+      return this;
+    }
+
+    @Override
+    public App_HiltComponents.ViewWithFragmentC build() {
+      Preconditions.checkBuilderRequirement(view, View.class);
+      return new ViewWithFragmentCImpl(singletonCImpl, activityRetainedCImpl, activityCImpl, fragmentCImpl, view);
+    }
+  }
+
+  private static final class ViewCBuilder implements App_HiltComponents.ViewC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private View view;
+
+    private ViewCBuilder(SingletonCImpl singletonCImpl, ActivityRetainedCImpl activityRetainedCImpl,
+        ActivityCImpl activityCImpl) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+    }
+
+    @Override
+    public ViewCBuilder view(View view) {
+      this.view = Preconditions.checkNotNull(view);
+      return this;
+    }
+
+    @Override
+    public App_HiltComponents.ViewC build() {
+      Preconditions.checkBuilderRequirement(view, View.class);
+      return new ViewCImpl(singletonCImpl, activityRetainedCImpl, activityCImpl, view);
+    }
+  }
+
+  private static final class ViewModelCBuilder implements App_HiltComponents.ViewModelC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private SavedStateHandle savedStateHandle;
+
+    private ViewModelLifecycle viewModelLifecycle;
+
+    private ViewModelCBuilder(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+    }
+
+    @Override
+    public ViewModelCBuilder savedStateHandle(SavedStateHandle handle) {
+      this.savedStateHandle = Preconditions.checkNotNull(handle);
+      return this;
+    }
+
+    @Override
+    public ViewModelCBuilder viewModelLifecycle(ViewModelLifecycle viewModelLifecycle) {
+      this.viewModelLifecycle = Preconditions.checkNotNull(viewModelLifecycle);
+      return this;
+    }
+
+    @Override
+    public App_HiltComponents.ViewModelC build() {
+      Preconditions.checkBuilderRequirement(savedStateHandle, SavedStateHandle.class);
+      Preconditions.checkBuilderRequirement(viewModelLifecycle, ViewModelLifecycle.class);
+      return new ViewModelCImpl(singletonCImpl, activityRetainedCImpl, savedStateHandle, viewModelLifecycle);
+    }
+  }
+
+  private static final class ServiceCBuilder implements App_HiltComponents.ServiceC.Builder {
+    private final SingletonCImpl singletonCImpl;
+
+    private Service service;
+
+    private ServiceCBuilder(SingletonCImpl singletonCImpl) {
+      this.singletonCImpl = singletonCImpl;
+    }
+
+    @Override
+    public ServiceCBuilder service(Service service) {
+      this.service = Preconditions.checkNotNull(service);
+      return this;
+    }
+
+    @Override
+    public App_HiltComponents.ServiceC build() {
+      Preconditions.checkBuilderRequirement(service, Service.class);
+      return new ServiceCImpl(singletonCImpl, service);
+    }
+  }
+
+  private static final class ViewWithFragmentCImpl extends App_HiltComponents.ViewWithFragmentC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private final FragmentCImpl fragmentCImpl;
+
+    private final ViewWithFragmentCImpl viewWithFragmentCImpl = this;
+
+    private ViewWithFragmentCImpl(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, ActivityCImpl activityCImpl,
+        FragmentCImpl fragmentCImpl, View viewParam) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+      this.fragmentCImpl = fragmentCImpl;
+
+
+    }
+  }
+
+  private static final class FragmentCImpl extends App_HiltComponents.FragmentC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private final FragmentCImpl fragmentCImpl = this;
+
+    private FragmentCImpl(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, ActivityCImpl activityCImpl,
+        Fragment fragmentParam) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+
+
+    }
+
+    @Override
+    public DefaultViewModelFactories.InternalFactoryFactory getHiltInternalFactoryFactory() {
+      return activityCImpl.getHiltInternalFactoryFactory();
+    }
+
+    @Override
+    public ViewWithFragmentComponentBuilder viewWithFragmentComponentBuilder() {
+      return new ViewWithFragmentCBuilder(singletonCImpl, activityRetainedCImpl, activityCImpl, fragmentCImpl);
+    }
+  }
+
+  private static final class ViewCImpl extends App_HiltComponents.ViewC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl;
+
+    private final ViewCImpl viewCImpl = this;
+
+    private ViewCImpl(SingletonCImpl singletonCImpl, ActivityRetainedCImpl activityRetainedCImpl,
+        ActivityCImpl activityCImpl, View viewParam) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.activityCImpl = activityCImpl;
+
+
+    }
+  }
+
+  private static final class ActivityCImpl extends App_HiltComponents.ActivityC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ActivityCImpl activityCImpl = this;
+
+    private ActivityCImpl(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, Activity activityParam) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+
+
+    }
+
+    @Override
+    public void injectMainActivity(MainActivity mainActivity) {
+      injectMainActivity2(mainActivity);
+    }
+
+    @Override
+    public DefaultViewModelFactories.InternalFactoryFactory getHiltInternalFactoryFactory() {
+      return DefaultViewModelFactories_InternalFactoryFactory_Factory.newInstance(getViewModelKeys(), new ViewModelCBuilder(singletonCImpl, activityRetainedCImpl));
+    }
+
+    @Override
+    public Map<Class<?>, Boolean> getViewModelKeys() {
+      return LazyClassKeyMap.<Boolean>of(ImmutableMap.<String, Boolean>builderWithExpectedSize(7).put(LazyClassKeyProvider.com_company_app_presentation_ai_AskAiViewModel, AskAiViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_history_CallDetailViewModel, CallDetailViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_history_CallHistoryViewModel, CallHistoryViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_call_CallViewModel, CallViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_chat_ChatViewModel, ChatViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_home_HomeViewModel, HomeViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_settings_SettingsViewModel, SettingsViewModel_HiltModules.KeyModule.provide()).build());
+    }
+
+    @Override
+    public ViewModelComponentBuilder getViewModelComponentBuilder() {
+      return new ViewModelCBuilder(singletonCImpl, activityRetainedCImpl);
+    }
+
+    @Override
+    public FragmentComponentBuilder fragmentComponentBuilder() {
+      return new FragmentCBuilder(singletonCImpl, activityRetainedCImpl, activityCImpl);
+    }
+
+    @Override
+    public ViewComponentBuilder viewComponentBuilder() {
+      return new ViewCBuilder(singletonCImpl, activityRetainedCImpl, activityCImpl);
+    }
+
+    @CanIgnoreReturnValue
+    private MainActivity injectMainActivity2(MainActivity instance) {
+      MainActivity_MembersInjector.injectAudioCaptureManager(instance, singletonCImpl.audioCaptureManagerProvider.get());
+      return instance;
+    }
+
+    @IdentifierNameString
+    private static final class LazyClassKeyProvider {
+      static String com_company_app_presentation_settings_SettingsViewModel = "com.company.app.presentation.settings.SettingsViewModel";
+
+      static String com_company_app_presentation_home_HomeViewModel = "com.company.app.presentation.home.HomeViewModel";
+
+      static String com_company_app_presentation_chat_ChatViewModel = "com.company.app.presentation.chat.ChatViewModel";
+
+      static String com_company_app_presentation_history_CallDetailViewModel = "com.company.app.presentation.history.CallDetailViewModel";
+
+      static String com_company_app_presentation_history_CallHistoryViewModel = "com.company.app.presentation.history.CallHistoryViewModel";
+
+      static String com_company_app_presentation_call_CallViewModel = "com.company.app.presentation.call.CallViewModel";
+
+      static String com_company_app_presentation_ai_AskAiViewModel = "com.company.app.presentation.ai.AskAiViewModel";
+
+      @KeepFieldType
+      SettingsViewModel com_company_app_presentation_settings_SettingsViewModel2;
+
+      @KeepFieldType
+      HomeViewModel com_company_app_presentation_home_HomeViewModel2;
+
+      @KeepFieldType
+      ChatViewModel com_company_app_presentation_chat_ChatViewModel2;
+
+      @KeepFieldType
+      CallDetailViewModel com_company_app_presentation_history_CallDetailViewModel2;
+
+      @KeepFieldType
+      CallHistoryViewModel com_company_app_presentation_history_CallHistoryViewModel2;
+
+      @KeepFieldType
+      CallViewModel com_company_app_presentation_call_CallViewModel2;
+
+      @KeepFieldType
+      AskAiViewModel com_company_app_presentation_ai_AskAiViewModel2;
+    }
+  }
+
+  private static final class ViewModelCImpl extends App_HiltComponents.ViewModelC {
+    private final SavedStateHandle savedStateHandle;
+
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl;
+
+    private final ViewModelCImpl viewModelCImpl = this;
+
+    private Provider<AskAiViewModel> askAiViewModelProvider;
+
+    private Provider<CallDetailViewModel> callDetailViewModelProvider;
+
+    private Provider<CallHistoryViewModel> callHistoryViewModelProvider;
+
+    private Provider<CallViewModel> callViewModelProvider;
+
+    private Provider<ChatViewModel> chatViewModelProvider;
+
+    private Provider<HomeViewModel> homeViewModelProvider;
+
+    private Provider<SettingsViewModel> settingsViewModelProvider;
+
+    private ViewModelCImpl(SingletonCImpl singletonCImpl,
+        ActivityRetainedCImpl activityRetainedCImpl, SavedStateHandle savedStateHandleParam,
+        ViewModelLifecycle viewModelLifecycleParam) {
+      this.singletonCImpl = singletonCImpl;
+      this.activityRetainedCImpl = activityRetainedCImpl;
+      this.savedStateHandle = savedStateHandleParam;
+      initialize(savedStateHandleParam, viewModelLifecycleParam);
+
+    }
+
+    private RagQueryUseCase ragQueryUseCase() {
+      return new RagQueryUseCase(singletonCImpl.tFLiteEmbedderProvider.get(), singletonCImpl.provideVectorStoreProvider.get(), singletonCImpl.provideLLMEngineProvider.get());
+    }
+
+    private GetCallDetailUseCase getCallDetailUseCase() {
+      return new GetCallDetailUseCase(singletonCImpl.bindCallRepositoryProvider.get());
+    }
+
+    private CallScopedRAGQueryUseCase callScopedRAGQueryUseCase() {
+      return new CallScopedRAGQueryUseCase(singletonCImpl.tFLiteEmbedderProvider.get(), singletonCImpl.provideVectorStoreProvider.get(), singletonCImpl.provideLLMEngineProvider.get());
+    }
+
+    private GetCallHistoryUseCase getCallHistoryUseCase() {
+      return new GetCallHistoryUseCase(singletonCImpl.bindCallRepositoryProvider.get());
+    }
+
+    private StartRecordingUseCase startRecordingUseCase() {
+      return new StartRecordingUseCase(singletonCImpl.callRecordingControllerProvider.get());
+    }
+
+    private StopRecordingUseCase stopRecordingUseCase() {
+      return new StopRecordingUseCase(singletonCImpl.callRecordingControllerProvider.get());
+    }
+
+    private TranscribeCallUseCase transcribeCallUseCase() {
+      return new TranscribeCallUseCase(singletonCImpl.bindAIRepositoryProvider.get());
+    }
+
+    private ObserveChatMessagesUseCase observeChatMessagesUseCase() {
+      return new ObserveChatMessagesUseCase(singletonCImpl.bindChatRepositoryProvider.get());
+    }
+
+    private SendMessageUseCase sendMessageUseCase() {
+      return new SendMessageUseCase(singletonCImpl.bindChatRepositoryProvider.get());
+    }
+
+    private ObserveCallsUseCase observeCallsUseCase() {
+      return new ObserveCallsUseCase(singletonCImpl.bindCallRepositoryProvider.get());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void initialize(final SavedStateHandle savedStateHandleParam,
+        final ViewModelLifecycle viewModelLifecycleParam) {
+      this.askAiViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 0);
+      this.callDetailViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 1);
+      this.callHistoryViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 2);
+      this.callViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 3);
+      this.chatViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 4);
+      this.homeViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 5);
+      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 6);
+    }
+
+    @Override
+    public Map<Class<?>, javax.inject.Provider<ViewModel>> getHiltViewModelMap() {
+      return LazyClassKeyMap.<javax.inject.Provider<ViewModel>>of(ImmutableMap.<String, javax.inject.Provider<ViewModel>>builderWithExpectedSize(7).put(LazyClassKeyProvider.com_company_app_presentation_ai_AskAiViewModel, ((Provider) askAiViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_history_CallDetailViewModel, ((Provider) callDetailViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_history_CallHistoryViewModel, ((Provider) callHistoryViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_call_CallViewModel, ((Provider) callViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_chat_ChatViewModel, ((Provider) chatViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_home_HomeViewModel, ((Provider) homeViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_settings_SettingsViewModel, ((Provider) settingsViewModelProvider)).build());
+    }
+
+    @Override
+    public Map<Class<?>, Object> getHiltViewModelAssistedMap() {
+      return ImmutableMap.<Class<?>, Object>of();
+    }
+
+    @IdentifierNameString
+    private static final class LazyClassKeyProvider {
+      static String com_company_app_presentation_call_CallViewModel = "com.company.app.presentation.call.CallViewModel";
+
+      static String com_company_app_presentation_ai_AskAiViewModel = "com.company.app.presentation.ai.AskAiViewModel";
+
+      static String com_company_app_presentation_home_HomeViewModel = "com.company.app.presentation.home.HomeViewModel";
+
+      static String com_company_app_presentation_chat_ChatViewModel = "com.company.app.presentation.chat.ChatViewModel";
+
+      static String com_company_app_presentation_history_CallHistoryViewModel = "com.company.app.presentation.history.CallHistoryViewModel";
+
+      static String com_company_app_presentation_history_CallDetailViewModel = "com.company.app.presentation.history.CallDetailViewModel";
+
+      static String com_company_app_presentation_settings_SettingsViewModel = "com.company.app.presentation.settings.SettingsViewModel";
+
+      @KeepFieldType
+      CallViewModel com_company_app_presentation_call_CallViewModel2;
+
+      @KeepFieldType
+      AskAiViewModel com_company_app_presentation_ai_AskAiViewModel2;
+
+      @KeepFieldType
+      HomeViewModel com_company_app_presentation_home_HomeViewModel2;
+
+      @KeepFieldType
+      ChatViewModel com_company_app_presentation_chat_ChatViewModel2;
+
+      @KeepFieldType
+      CallHistoryViewModel com_company_app_presentation_history_CallHistoryViewModel2;
+
+      @KeepFieldType
+      CallDetailViewModel com_company_app_presentation_history_CallDetailViewModel2;
+
+      @KeepFieldType
+      SettingsViewModel com_company_app_presentation_settings_SettingsViewModel2;
+    }
+
+    private static final class SwitchingProvider<T> implements Provider<T> {
+      private final SingletonCImpl singletonCImpl;
+
+      private final ActivityRetainedCImpl activityRetainedCImpl;
+
+      private final ViewModelCImpl viewModelCImpl;
+
+      private final int id;
+
+      SwitchingProvider(SingletonCImpl singletonCImpl, ActivityRetainedCImpl activityRetainedCImpl,
+          ViewModelCImpl viewModelCImpl, int id) {
+        this.singletonCImpl = singletonCImpl;
+        this.activityRetainedCImpl = activityRetainedCImpl;
+        this.viewModelCImpl = viewModelCImpl;
+        this.id = id;
+      }
+
+      @SuppressWarnings("unchecked")
+      @Override
+      public T get() {
+        switch (id) {
+          case 0: // com.company.app.presentation.ai.AskAiViewModel 
+          return (T) new AskAiViewModel(viewModelCImpl.ragQueryUseCase());
+
+          case 1: // com.company.app.presentation.history.CallDetailViewModel 
+          return (T) new CallDetailViewModel(viewModelCImpl.getCallDetailUseCase(), viewModelCImpl.callScopedRAGQueryUseCase());
+
+          case 2: // com.company.app.presentation.history.CallHistoryViewModel 
+          return (T) new CallHistoryViewModel(viewModelCImpl.getCallHistoryUseCase());
+
+          case 3: // com.company.app.presentation.call.CallViewModel 
+          return (T) new CallViewModel(singletonCImpl.voipClientProvider.get(), viewModelCImpl.startRecordingUseCase(), viewModelCImpl.stopRecordingUseCase(), viewModelCImpl.transcribeCallUseCase(), viewModelCImpl.ragQueryUseCase());
+
+          case 4: // com.company.app.presentation.chat.ChatViewModel 
+          return (T) new ChatViewModel(viewModelCImpl.savedStateHandle, viewModelCImpl.observeChatMessagesUseCase(), viewModelCImpl.sendMessageUseCase());
+
+          case 5: // com.company.app.presentation.home.HomeViewModel 
+          return (T) new HomeViewModel(viewModelCImpl.observeCallsUseCase(), singletonCImpl.permissionsManagerProvider.get());
+
+          case 6: // com.company.app.presentation.settings.SettingsViewModel 
+          return (T) new SettingsViewModel(singletonCImpl.modelDownloadManagerProvider.get(), singletonCImpl.permissionsManagerProvider.get());
+
+          default: throw new AssertionError(id);
+        }
+      }
+    }
+  }
+
+  private static final class ActivityRetainedCImpl extends App_HiltComponents.ActivityRetainedC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ActivityRetainedCImpl activityRetainedCImpl = this;
+
+    private Provider<ActivityRetainedLifecycle> provideActivityRetainedLifecycleProvider;
+
+    private ActivityRetainedCImpl(SingletonCImpl singletonCImpl,
+        SavedStateHandleHolder savedStateHandleHolderParam) {
+      this.singletonCImpl = singletonCImpl;
+
+      initialize(savedStateHandleHolderParam);
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void initialize(final SavedStateHandleHolder savedStateHandleHolderParam) {
+      this.provideActivityRetainedLifecycleProvider = DoubleCheck.provider(new SwitchingProvider<ActivityRetainedLifecycle>(singletonCImpl, activityRetainedCImpl, 0));
+    }
+
+    @Override
+    public ActivityComponentBuilder activityComponentBuilder() {
+      return new ActivityCBuilder(singletonCImpl, activityRetainedCImpl);
+    }
+
+    @Override
+    public ActivityRetainedLifecycle getActivityRetainedLifecycle() {
+      return provideActivityRetainedLifecycleProvider.get();
+    }
+
+    private static final class SwitchingProvider<T> implements Provider<T> {
+      private final SingletonCImpl singletonCImpl;
+
+      private final ActivityRetainedCImpl activityRetainedCImpl;
+
+      private final int id;
+
+      SwitchingProvider(SingletonCImpl singletonCImpl, ActivityRetainedCImpl activityRetainedCImpl,
+          int id) {
+        this.singletonCImpl = singletonCImpl;
+        this.activityRetainedCImpl = activityRetainedCImpl;
+        this.id = id;
+      }
+
+      @SuppressWarnings("unchecked")
+      @Override
+      public T get() {
+        switch (id) {
+          case 0: // dagger.hilt.android.ActivityRetainedLifecycle 
+          return (T) ActivityRetainedComponentManager_LifecycleModule_ProvideActivityRetainedLifecycleFactory.provideActivityRetainedLifecycle();
+
+          default: throw new AssertionError(id);
+        }
+      }
+    }
+  }
+
+  private static final class ServiceCImpl extends App_HiltComponents.ServiceC {
+    private final SingletonCImpl singletonCImpl;
+
+    private final ServiceCImpl serviceCImpl = this;
+
+    private ServiceCImpl(SingletonCImpl singletonCImpl, Service serviceParam) {
+      this.singletonCImpl = singletonCImpl;
+
+
+    }
+
+    @Override
+    public void injectCallNotificationListenerService(
+        CallNotificationListenerService callNotificationListenerService) {
+    }
+
+    @Override
+    public void injectVoipSignalingService(VoipSignalingService voipSignalingService) {
+      injectVoipSignalingService2(voipSignalingService);
+    }
+
+    @Override
+    public void injectCallRecordingService(CallRecordingService callRecordingService) {
+      injectCallRecordingService2(callRecordingService);
+    }
+
+    @CanIgnoreReturnValue
+    private VoipSignalingService injectVoipSignalingService2(VoipSignalingService instance) {
+      VoipSignalingService_MembersInjector.injectSignalingClient(instance, singletonCImpl.provideSignalingClientProvider.get());
+      return instance;
+    }
+
+    @CanIgnoreReturnValue
+    private CallRecordingService injectCallRecordingService2(CallRecordingService instance2) {
+      CallRecordingService_MembersInjector.injectAudioCaptureManager(instance2, singletonCImpl.audioCaptureManagerProvider.get());
+      CallRecordingService_MembersInjector.injectCallRepository(instance2, singletonCImpl.bindCallRepositoryProvider.get());
+      CallRecordingService_MembersInjector.injectDispatchers(instance2, singletonCImpl.provideDispatchersProvider.get());
+      return instance2;
+    }
+  }
+
+  private static final class SingletonCImpl extends App_HiltComponents.SingletonC {
+    private final ApplicationContextModule applicationContextModule;
+
+    private final SingletonCImpl singletonCImpl = this;
+
+    private Provider<AppDatabase> provideDatabaseProvider;
+
+    private Provider<EncryptionManager> provideEncryptionManagerProvider;
+
+    private Provider<DispatcherProvider> provideDispatchersProvider;
+
+    private Provider<CallRepositoryImpl> callRepositoryImplProvider;
+
+    private Provider<CallRepository> bindCallRepositoryProvider;
+
+    private Provider<AudioCaptureManager> audioCaptureManagerProvider;
+
+    private Provider<CallRecordingController> callRecordingControllerProvider;
+
+    private Provider<AssetExtractor> assetExtractorProvider;
+
+    private Provider<TFLiteEmbedder> tFLiteEmbedderProvider;
+
+    private Provider<EmbeddingDao> provideEmbeddingDaoProvider;
+
+    private Provider<EmbeddingConverters> provideEmbeddingConvertersProvider;
+
+    private Provider<VectorStore> provideVectorStoreProvider;
+
+    private Provider<OkHttpClient> provideOkHttpClientProvider;
+
+    private Provider<LLMEngine> provideLLMEngineProvider;
+
+    private Provider<VoipClient> voipClientProvider;
+
+    private Provider<AudioDecoder> audioDecoderProvider;
+
+    private Provider<WhisperEngine> whisperEngineProvider;
+
+    private Provider<AIRepositoryImpl> aIRepositoryImplProvider;
+
+    private Provider<AIRepository> bindAIRepositoryProvider;
+
+    private Provider<ChatRepositoryImpl> chatRepositoryImplProvider;
+
+    private Provider<ChatRepository> bindChatRepositoryProvider;
+
+    private Provider<PermissionsManager> permissionsManagerProvider;
+
+    private Provider<ModelDownloadManager> modelDownloadManagerProvider;
+
+    private Provider<SignalingClient> provideSignalingClientProvider;
+
+    private SingletonCImpl(ApplicationContextModule applicationContextModuleParam) {
+      this.applicationContextModule = applicationContextModuleParam;
+      initialize(applicationContextModuleParam);
+
+    }
+
+    private CallDao callDao() {
+      return DatabaseModule_ProvideCallDaoFactory.provideCallDao(provideDatabaseProvider.get());
+    }
+
+    private TranscriptDao transcriptDao() {
+      return DatabaseModule_ProvideTranscriptDaoFactory.provideTranscriptDao(provideDatabaseProvider.get());
+    }
+
+    private MessageDao messageDao() {
+      return DatabaseModule_ProvideMessageDaoFactory.provideMessageDao(provideDatabaseProvider.get());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void initialize(final ApplicationContextModule applicationContextModuleParam) {
+      this.provideDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<AppDatabase>(singletonCImpl, 2));
+      this.provideEncryptionManagerProvider = DoubleCheck.provider(new SwitchingProvider<EncryptionManager>(singletonCImpl, 3));
+      this.provideDispatchersProvider = DoubleCheck.provider(new SwitchingProvider<DispatcherProvider>(singletonCImpl, 4));
+      this.callRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 1);
+      this.bindCallRepositoryProvider = DoubleCheck.provider((Provider) callRepositoryImplProvider);
+      this.audioCaptureManagerProvider = DoubleCheck.provider(new SwitchingProvider<AudioCaptureManager>(singletonCImpl, 5));
+      this.callRecordingControllerProvider = DoubleCheck.provider(new SwitchingProvider<CallRecordingController>(singletonCImpl, 0));
+      this.assetExtractorProvider = DoubleCheck.provider(new SwitchingProvider<AssetExtractor>(singletonCImpl, 7));
+      this.tFLiteEmbedderProvider = DoubleCheck.provider(new SwitchingProvider<TFLiteEmbedder>(singletonCImpl, 6));
+      this.provideEmbeddingDaoProvider = DoubleCheck.provider(new SwitchingProvider<EmbeddingDao>(singletonCImpl, 9));
+      this.provideEmbeddingConvertersProvider = DoubleCheck.provider(new SwitchingProvider<EmbeddingConverters>(singletonCImpl, 10));
+      this.provideVectorStoreProvider = DoubleCheck.provider(new SwitchingProvider<VectorStore>(singletonCImpl, 8));
+      this.provideOkHttpClientProvider = DoubleCheck.provider(new SwitchingProvider<OkHttpClient>(singletonCImpl, 12));
+      this.provideLLMEngineProvider = DoubleCheck.provider(new SwitchingProvider<LLMEngine>(singletonCImpl, 11));
+      this.voipClientProvider = DoubleCheck.provider(new SwitchingProvider<VoipClient>(singletonCImpl, 13));
+      this.audioDecoderProvider = DoubleCheck.provider(new SwitchingProvider<AudioDecoder>(singletonCImpl, 16));
+      this.whisperEngineProvider = DoubleCheck.provider(new SwitchingProvider<WhisperEngine>(singletonCImpl, 15));
+      this.aIRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 14);
+      this.bindAIRepositoryProvider = DoubleCheck.provider((Provider) aIRepositoryImplProvider);
+      this.chatRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 17);
+      this.bindChatRepositoryProvider = DoubleCheck.provider((Provider) chatRepositoryImplProvider);
+      this.permissionsManagerProvider = DoubleCheck.provider(new SwitchingProvider<PermissionsManager>(singletonCImpl, 18));
+      this.modelDownloadManagerProvider = DoubleCheck.provider(new SwitchingProvider<ModelDownloadManager>(singletonCImpl, 19));
+      this.provideSignalingClientProvider = DoubleCheck.provider(new SwitchingProvider<SignalingClient>(singletonCImpl, 20));
+    }
+
+    @Override
+    public void injectApp(App app) {
+    }
+
+    @Override
+    public CallRecordingController callRecordingController() {
+      return callRecordingControllerProvider.get();
+    }
+
+    @Override
+    public Set<Boolean> getDisableFragmentGetContextFix() {
+      return ImmutableSet.<Boolean>of();
+    }
+
+    @Override
+    public ActivityRetainedComponentBuilder retainedComponentBuilder() {
+      return new ActivityRetainedCBuilder(singletonCImpl);
+    }
+
+    @Override
+    public ServiceComponentBuilder serviceComponentBuilder() {
+      return new ServiceCBuilder(singletonCImpl);
+    }
+
+    private static final class SwitchingProvider<T> implements Provider<T> {
+      private final SingletonCImpl singletonCImpl;
+
+      private final int id;
+
+      SwitchingProvider(SingletonCImpl singletonCImpl, int id) {
+        this.singletonCImpl = singletonCImpl;
+        this.id = id;
+      }
+
+      @SuppressWarnings("unchecked")
+      @Override
+      public T get() {
+        switch (id) {
+          case 0: // com.company.app.platform.recording.CallRecordingController 
+          return (T) new CallRecordingController(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.bindCallRepositoryProvider.get(), singletonCImpl.audioCaptureManagerProvider.get(), singletonCImpl.provideDispatchersProvider.get());
+
+          case 1: // com.company.app.data.repository.CallRepositoryImpl 
+          return (T) new CallRepositoryImpl(singletonCImpl.callDao(), singletonCImpl.transcriptDao(), singletonCImpl.provideEncryptionManagerProvider.get(), singletonCImpl.provideDispatchersProvider.get());
+
+          case 2: // com.company.app.data.local.db.AppDatabase 
+          return (T) DatabaseModule_ProvideDatabaseFactory.provideDatabase(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
+
+          case 3: // com.company.app.core.security.EncryptionManager 
+          return (T) DatabaseModule_ProvideEncryptionManagerFactory.provideEncryptionManager();
+
+          case 4: // com.company.app.core.common.DispatcherProvider 
+          return (T) DispatcherModule_ProvideDispatchersFactory.provideDispatchers();
+
+          case 5: // com.company.app.platform.recording.AudioCaptureManager 
+          return (T) new AudioCaptureManager(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
+
+          case 6: // com.company.app.data.ai.engine.TFLiteEmbedder 
+          return (T) new TFLiteEmbedder(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.assetExtractorProvider.get());
+
+          case 7: // com.company.app.core.util.AssetExtractor 
+          return (T) new AssetExtractor(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
+
+          case 8: // com.company.app.data.local.vector.VectorStore 
+          return (T) AIModule_ProvideVectorStoreFactory.provideVectorStore(singletonCImpl.provideEmbeddingDaoProvider.get(), singletonCImpl.provideEmbeddingConvertersProvider.get());
+
+          case 9: // com.company.app.data.local.dao.EmbeddingDao 
+          return (T) AIModule_ProvideEmbeddingDaoFactory.provideEmbeddingDao(singletonCImpl.provideDatabaseProvider.get());
+
+          case 10: // com.company.app.data.local.vector.EmbeddingConverters 
+          return (T) AIModule_ProvideEmbeddingConvertersFactory.provideEmbeddingConverters();
+
+          case 11: // com.company.app.data.remote.llm.LLMEngine 
+          return (T) AIModule_ProvideLLMEngineFactory.provideLLMEngine(singletonCImpl.provideOkHttpClientProvider.get());
+
+          case 12: // okhttp3.OkHttpClient 
+          return (T) NetworkModule_ProvideOkHttpClientFactory.provideOkHttpClient();
+
+          case 13: // com.company.app.platform.call.VoipClient 
+          return (T) new VoipClient();
+
+          case 14: // com.company.app.data.repository.AIRepositoryImpl 
+          return (T) new AIRepositoryImpl(singletonCImpl.whisperEngineProvider.get(), singletonCImpl.provideLLMEngineProvider.get(), singletonCImpl.tFLiteEmbedderProvider.get(), singletonCImpl.provideVectorStoreProvider.get());
+
+          case 15: // com.company.app.data.ai.engine.WhisperEngine 
+          return (T) new WhisperEngine(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.provideDispatchersProvider.get(), singletonCImpl.assetExtractorProvider.get(), singletonCImpl.audioDecoderProvider.get());
+
+          case 16: // com.company.app.core.util.AudioDecoder 
+          return (T) new AudioDecoder();
+
+          case 17: // com.company.app.data.repository.ChatRepositoryImpl 
+          return (T) new ChatRepositoryImpl(singletonCImpl.messageDao(), singletonCImpl.provideEncryptionManagerProvider.get(), singletonCImpl.provideDispatchersProvider.get());
+
+          case 18: // com.company.app.presentation.permissions.PermissionsManager 
+          return (T) new PermissionsManager(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.audioCaptureManagerProvider.get());
+
+          case 19: // com.company.app.data.ai.manager.ModelDownloadManager 
+          return (T) new ModelDownloadManager(singletonCImpl.assetExtractorProvider.get());
+
+          case 20: // com.company.app.data.remote.SignalingClient 
+          return (T) NetworkModule_ProvideSignalingClientFactory.provideSignalingClient();
+
+          default: throw new AssertionError(id);
+        }
+      }
+    }
+  }
+}

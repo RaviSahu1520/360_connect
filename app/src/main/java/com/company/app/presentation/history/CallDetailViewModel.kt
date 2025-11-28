@@ -6,6 +6,7 @@ import com.company.app.domain.model.CallWithTranscript
 import com.company.app.domain.model.CallType
 import com.company.app.domain.usecase.ai.CallScopedRAGQueryUseCase
 import com.company.app.domain.usecase.call.GetCallDetailUseCase
+import com.company.app.presentation.ai.AiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,14 +23,14 @@ class CallDetailViewModel @Inject constructor(
     val uiState: StateFlow<CallDetailUiState> = _uiState
 
     fun load(callId: Long) {
-        _uiState.value = _uiState.value.copy(isLoading = true, aiError = null, aiAnswer = null)
+        _uiState.value = _uiState.value.copy(isLoading = true, aiState = AiState.Idle)
         viewModelScope.launch {
             runCatching { getCallDetailUseCase(callId) }
                 .onSuccess { detail ->
                     if (detail == null) {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            aiError = "Call not found"
+                            aiState = AiState.Error("Call not found")
                         )
                     } else {
                         _uiState.value = _uiState.value.copy(
@@ -41,20 +42,27 @@ class CallDetailViewModel @Inject constructor(
                     }
                 }
                 .onFailure { error ->
-                    _uiState.value = _uiState.value.copy(isLoading = false, aiError = error.message)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        aiState = AiState.Error(error.message ?: "Unknown error")
+                    )
                 }
         }
     }
 
     fun askAiAboutCall(callId: Long, query: String) {
-        _uiState.value = _uiState.value.copy(aiIsLoading = true, aiError = null)
+        _uiState.value = _uiState.value.copy(aiState = AiState.Loading)
         viewModelScope.launch {
             val result = callScopedRagQueryUseCase(callId, query)
-            _uiState.value = if (result.isSuccess) {
-                _uiState.value.copy(aiIsLoading = false, aiAnswer = result.getOrNull())
-            } else {
-                _uiState.value.copy(aiIsLoading = false, aiError = result.exceptionOrNull()?.message)
-            }
+            _uiState.value = result.fold(
+                onSuccess = { answer ->
+                    val safeAnswer = if (answer.isBlank()) "Error: Empty response" else answer
+                    _uiState.value.copy(aiState = AiState.Success(safeAnswer))
+                },
+                onFailure = { error ->
+                    _uiState.value.copy(aiState = AiState.Error(error.message ?: "Unknown error"))
+                }
+            )
         }
     }
 
@@ -81,10 +89,12 @@ data class CallDetailUiState(
     val header: CallHeaderUi? = null,
     val transcript: String? = null,
     val summary: String? = null,
-    val aiAnswer: String? = null,
-    val aiIsLoading: Boolean = false,
-    val aiError: String? = null
-)
+    val aiState: AiState = AiState.Idle
+) {
+    val aiAnswer: String? get() = (aiState as? AiState.Success)?.answer
+    val aiIsLoading: Boolean get() = aiState is AiState.Loading
+    val aiError: String? get() = (aiState as? AiState.Error)?.message
+}
 
 data class CallHeaderUi(
     val remoteUserLabel: String,

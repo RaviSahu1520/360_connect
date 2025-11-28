@@ -29,7 +29,7 @@ class EmbeddingWorker @AssistedInject constructor(
 
         return runCatching {
             val chunks = chunkTranscript(transcript.fullText)
-            chunks.forEach { chunk ->
+            for (chunk in chunks) {
                 val embedding = embedder.embed(chunk)
                 vectorStore.insertChunk(
                     transcriptId = transcript.id,

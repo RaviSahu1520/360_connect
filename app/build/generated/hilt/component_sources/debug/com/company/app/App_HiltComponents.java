@@ -17,6 +17,7 @@ import com.company.app.presentation.chat.ChatViewModel_HiltModules;
 import com.company.app.presentation.history.CallDetailViewModel_HiltModules;
 import com.company.app.presentation.history.CallHistoryViewModel_HiltModules;
 import com.company.app.presentation.home.HomeViewModel_HiltModules;
+import com.company.app.presentation.permissions.PermissionOnboardingViewModel_HiltModules;
 import com.company.app.presentation.settings.SettingsViewModel_HiltModules;
 import com.company.app.workers.EmbeddingWorker_HiltModule;
 import com.company.app.workers.SummarizationWorker_HiltModule;
@@ -194,6 +195,7 @@ public final class App_HiltComponents {
           HiltWrapper_ActivityRetainedComponentManager_LifecycleModule.class,
           HiltWrapper_SavedStateHandleModule.class,
           HomeViewModel_HiltModules.KeyModule.class,
+          PermissionOnboardingViewModel_HiltModules.KeyModule.class,
           SettingsViewModel_HiltModules.KeyModule.class
       }
   )
@@ -237,6 +239,7 @@ public final class App_HiltComponents {
           ChatViewModel_HiltModules.BindsModule.class,
           HiltWrapper_HiltViewModelFactory_ViewModelModule.class,
           HomeViewModel_HiltModules.BindsModule.class,
+          PermissionOnboardingViewModel_HiltModules.BindsModule.class,
           SettingsViewModel_HiltModules.BindsModule.class
       }
   )

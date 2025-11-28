@@ -8,4 +8,5 @@ interface AIRepository {
     fun transcribe(audioFile: File): Flow<String>
     suspend fun summarize(text: String): String
     suspend fun queryRag(prompt: String): List<TranscriptChunk>
+    suspend fun generateResponse(prompt: String): Result<String>
 }

@@ -1,9 +1,9 @@
 package com.company.app.domain.usecase.ai
 
 import com.company.app.core.util.DateUtils
-import com.company.app.data.ai.engine.MediaPipeLLM
 import com.company.app.data.ai.engine.TFLiteEmbedder
 import com.company.app.data.local.vector.VectorStore
+import com.company.app.data.remote.llm.LLMEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -11,13 +11,13 @@ import javax.inject.Inject
 class RagQueryUseCase @Inject constructor(
     private val embedder: TFLiteEmbedder,
     private val vectorStore: VectorStore,
-    private val llm: MediaPipeLLM
+    private val llmEngine: LLMEngine
 ) {
     suspend operator fun invoke(query: String): Result<String> = withContext(Dispatchers.Default) {
-        runCatching {
+        try {
             val queryVector = embedder.embed(query)
             val chunks = vectorStore.search(queryVector, limit = 5)
-            if (chunks.isEmpty()) return@runCatching "No transcript context available yet."
+            if (chunks.isEmpty()) return@withContext Result.success("No transcript context available yet.")
             val context = chunks.joinToString("\n") {
                 "[${DateUtils.formatDateTime(it.timestamp.toEpochMilliseconds())}]: ${it.textChunk}"
             }
@@ -28,7 +28,10 @@ class RagQueryUseCase @Inject constructor(
 
                 Question: $query
             """.trimIndent()
-            llm.generateResponse(prompt)
+            val answer = llmEngine.generateResponse(prompt)
+            Result.success(answer)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

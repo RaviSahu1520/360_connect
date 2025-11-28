@@ -15,10 +15,11 @@ class ModelDownloadManager @Inject constructor(
     private val _state = MutableStateFlow(false)
     val state: StateFlow<Boolean> = _state
 
-    suspend fun ensureModelDownloaded(modelName: String) {
+    suspend fun ensureModelDownloaded(_modelName: String) {
         withContext(Dispatchers.IO) {
             assetExtractor.extract("models/whisper-tiny.bin")
-            assetExtractor.extract("models/all-mpnet-base-v2.tflite")
+            assetExtractor.extract("models/mobilebert_embedding.tflite")
+            assetExtractor.extract("models/gemma-2b-it-gpu-int4.bin")
             _state.emit(true)
         }
     }

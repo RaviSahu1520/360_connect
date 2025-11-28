@@ -7,6 +7,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
 import com.company.app.core.common.DispatcherProvider;
+import com.company.app.core.di.AIModule_ProvideEmbeddingConvertersFactory;
+import com.company.app.core.di.AIModule_ProvideEmbeddingDaoFactory;
+import com.company.app.core.di.AIModule_ProvideLLMEngineFactory;
 import com.company.app.core.di.AIModule_ProvideVectorStoreFactory;
 import com.company.app.core.di.DatabaseModule_ProvideCallDaoFactory;
 import com.company.app.core.di.DatabaseModule_ProvideDatabaseFactory;
@@ -14,20 +17,23 @@ import com.company.app.core.di.DatabaseModule_ProvideEncryptionManagerFactory;
 import com.company.app.core.di.DatabaseModule_ProvideMessageDaoFactory;
 import com.company.app.core.di.DatabaseModule_ProvideTranscriptDaoFactory;
 import com.company.app.core.di.DispatcherModule_ProvideDispatchersFactory;
+import com.company.app.core.di.NetworkModule_ProvideOkHttpClientFactory;
 import com.company.app.core.di.NetworkModule_ProvideSignalingClientFactory;
 import com.company.app.core.security.EncryptionManager;
 import com.company.app.core.util.AssetExtractor;
 import com.company.app.core.util.AudioDecoder;
-import com.company.app.data.ai.engine.MediaPipeLLM;
 import com.company.app.data.ai.engine.TFLiteEmbedder;
 import com.company.app.data.ai.engine.WhisperEngine;
 import com.company.app.data.ai.manager.ModelDownloadManager;
 import com.company.app.data.local.dao.CallDao;
+import com.company.app.data.local.dao.EmbeddingDao;
 import com.company.app.data.local.dao.MessageDao;
 import com.company.app.data.local.dao.TranscriptDao;
 import com.company.app.data.local.db.AppDatabase;
+import com.company.app.data.local.vector.EmbeddingConverters;
 import com.company.app.data.local.vector.VectorStore;
 import com.company.app.data.remote.SignalingClient;
+import com.company.app.data.remote.llm.LLMEngine;
 import com.company.app.data.repository.AIRepositoryImpl;
 import com.company.app.data.repository.CallRepositoryImpl;
 import com.company.app.data.repository.ChatRepositoryImpl;
@@ -66,9 +72,13 @@ import com.company.app.presentation.history.CallHistoryViewModel;
 import com.company.app.presentation.history.CallHistoryViewModel_HiltModules;
 import com.company.app.presentation.home.HomeViewModel;
 import com.company.app.presentation.home.HomeViewModel_HiltModules;
+import com.company.app.presentation.permissions.PermissionOnboardingViewModel;
+import com.company.app.presentation.permissions.PermissionOnboardingViewModel_HiltModules;
 import com.company.app.presentation.permissions.PermissionsManager;
 import com.company.app.presentation.settings.SettingsViewModel;
 import com.company.app.presentation.settings.SettingsViewModel_HiltModules;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import dagger.hilt.android.ActivityRetainedLifecycle;
 import dagger.hilt.android.ViewModelLifecycle;
@@ -90,13 +100,12 @@ import dagger.internal.DoubleCheck;
 import dagger.internal.IdentifierNameString;
 import dagger.internal.KeepFieldType;
 import dagger.internal.LazyClassKeyMap;
-import dagger.internal.MapBuilder;
 import dagger.internal.Preconditions;
 import dagger.internal.Provider;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.Generated;
+import okhttp3.OkHttpClient;
 
 @DaggerGenerated
 @Generated(
@@ -432,7 +441,7 @@ public final class DaggerApp_HiltComponents_SingletonC {
 
     @Override
     public Map<Class<?>, Boolean> getViewModelKeys() {
-      return LazyClassKeyMap.<Boolean>of(MapBuilder.<String, Boolean>newMapBuilder(7).put(LazyClassKeyProvider.com_company_app_presentation_ai_AskAiViewModel, AskAiViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_history_CallDetailViewModel, CallDetailViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_history_CallHistoryViewModel, CallHistoryViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_call_CallViewModel, CallViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_chat_ChatViewModel, ChatViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_home_HomeViewModel, HomeViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_settings_SettingsViewModel, SettingsViewModel_HiltModules.KeyModule.provide()).build());
+      return LazyClassKeyMap.<Boolean>of(ImmutableMap.<String, Boolean>builderWithExpectedSize(8).put(LazyClassKeyProvider.com_company_app_presentation_ai_AskAiViewModel, AskAiViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_history_CallDetailViewModel, CallDetailViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_history_CallHistoryViewModel, CallHistoryViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_call_CallViewModel, CallViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_chat_ChatViewModel, ChatViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_home_HomeViewModel, HomeViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_permissions_PermissionOnboardingViewModel, PermissionOnboardingViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_company_app_presentation_settings_SettingsViewModel, SettingsViewModel_HiltModules.KeyModule.provide()).build());
     }
 
     @Override
@@ -458,40 +467,45 @@ public final class DaggerApp_HiltComponents_SingletonC {
 
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
-      static String com_company_app_presentation_settings_SettingsViewModel = "com.company.app.presentation.settings.SettingsViewModel";
-
-      static String com_company_app_presentation_history_CallHistoryViewModel = "com.company.app.presentation.history.CallHistoryViewModel";
-
-      static String com_company_app_presentation_ai_AskAiViewModel = "com.company.app.presentation.ai.AskAiViewModel";
-
-      static String com_company_app_presentation_chat_ChatViewModel = "com.company.app.presentation.chat.ChatViewModel";
-
       static String com_company_app_presentation_home_HomeViewModel = "com.company.app.presentation.home.HomeViewModel";
 
-      static String com_company_app_presentation_call_CallViewModel = "com.company.app.presentation.call.CallViewModel";
+      static String com_company_app_presentation_settings_SettingsViewModel = "com.company.app.presentation.settings.SettingsViewModel";
 
       static String com_company_app_presentation_history_CallDetailViewModel = "com.company.app.presentation.history.CallDetailViewModel";
 
-      @KeepFieldType
-      SettingsViewModel com_company_app_presentation_settings_SettingsViewModel2;
+      static String com_company_app_presentation_ai_AskAiViewModel = "com.company.app.presentation.ai.AskAiViewModel";
 
-      @KeepFieldType
-      CallHistoryViewModel com_company_app_presentation_history_CallHistoryViewModel2;
+      static String com_company_app_presentation_call_CallViewModel = "com.company.app.presentation.call.CallViewModel";
 
-      @KeepFieldType
-      AskAiViewModel com_company_app_presentation_ai_AskAiViewModel2;
+      static String com_company_app_presentation_history_CallHistoryViewModel = "com.company.app.presentation.history.CallHistoryViewModel";
 
-      @KeepFieldType
-      ChatViewModel com_company_app_presentation_chat_ChatViewModel2;
+      static String com_company_app_presentation_permissions_PermissionOnboardingViewModel = "com.company.app.presentation.permissions.PermissionOnboardingViewModel";
+
+      static String com_company_app_presentation_chat_ChatViewModel = "com.company.app.presentation.chat.ChatViewModel";
 
       @KeepFieldType
       HomeViewModel com_company_app_presentation_home_HomeViewModel2;
 
       @KeepFieldType
-      CallViewModel com_company_app_presentation_call_CallViewModel2;
+      SettingsViewModel com_company_app_presentation_settings_SettingsViewModel2;
 
       @KeepFieldType
       CallDetailViewModel com_company_app_presentation_history_CallDetailViewModel2;
+
+      @KeepFieldType
+      AskAiViewModel com_company_app_presentation_ai_AskAiViewModel2;
+
+      @KeepFieldType
+      CallViewModel com_company_app_presentation_call_CallViewModel2;
+
+      @KeepFieldType
+      CallHistoryViewModel com_company_app_presentation_history_CallHistoryViewModel2;
+
+      @KeepFieldType
+      PermissionOnboardingViewModel com_company_app_presentation_permissions_PermissionOnboardingViewModel2;
+
+      @KeepFieldType
+      ChatViewModel com_company_app_presentation_chat_ChatViewModel2;
     }
   }
 
@@ -516,6 +530,8 @@ public final class DaggerApp_HiltComponents_SingletonC {
 
     private Provider<HomeViewModel> homeViewModelProvider;
 
+    private Provider<PermissionOnboardingViewModel> permissionOnboardingViewModelProvider;
+
     private Provider<SettingsViewModel> settingsViewModelProvider;
 
     private ViewModelCImpl(SingletonCImpl singletonCImpl,
@@ -529,7 +545,7 @@ public final class DaggerApp_HiltComponents_SingletonC {
     }
 
     private RagQueryUseCase ragQueryUseCase() {
-      return new RagQueryUseCase(singletonCImpl.tFLiteEmbedderProvider.get(), singletonCImpl.provideVectorStoreProvider.get(), singletonCImpl.mediaPipeLLMProvider.get());
+      return new RagQueryUseCase(singletonCImpl.tFLiteEmbedderProvider.get(), singletonCImpl.provideVectorStoreProvider.get(), singletonCImpl.provideLLMEngineProvider.get());
     }
 
     private GetCallDetailUseCase getCallDetailUseCase() {
@@ -537,7 +553,7 @@ public final class DaggerApp_HiltComponents_SingletonC {
     }
 
     private CallScopedRAGQueryUseCase callScopedRAGQueryUseCase() {
-      return new CallScopedRAGQueryUseCase(singletonCImpl.tFLiteEmbedderProvider.get(), singletonCImpl.provideVectorStoreProvider.get(), singletonCImpl.mediaPipeLLMProvider.get());
+      return new CallScopedRAGQueryUseCase(singletonCImpl.tFLiteEmbedderProvider.get(), singletonCImpl.provideVectorStoreProvider.get(), singletonCImpl.provideLLMEngineProvider.get());
     }
 
     private GetCallHistoryUseCase getCallHistoryUseCase() {
@@ -577,43 +593,40 @@ public final class DaggerApp_HiltComponents_SingletonC {
       this.callViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 3);
       this.chatViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 4);
       this.homeViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 5);
-      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 6);
+      this.permissionOnboardingViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 6);
+      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 7);
     }
 
     @Override
     public Map<Class<?>, javax.inject.Provider<ViewModel>> getHiltViewModelMap() {
-      return LazyClassKeyMap.<javax.inject.Provider<ViewModel>>of(MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(7).put(LazyClassKeyProvider.com_company_app_presentation_ai_AskAiViewModel, ((Provider) askAiViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_history_CallDetailViewModel, ((Provider) callDetailViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_history_CallHistoryViewModel, ((Provider) callHistoryViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_call_CallViewModel, ((Provider) callViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_chat_ChatViewModel, ((Provider) chatViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_home_HomeViewModel, ((Provider) homeViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_settings_SettingsViewModel, ((Provider) settingsViewModelProvider)).build());
+      return LazyClassKeyMap.<javax.inject.Provider<ViewModel>>of(ImmutableMap.<String, javax.inject.Provider<ViewModel>>builderWithExpectedSize(8).put(LazyClassKeyProvider.com_company_app_presentation_ai_AskAiViewModel, ((Provider) askAiViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_history_CallDetailViewModel, ((Provider) callDetailViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_history_CallHistoryViewModel, ((Provider) callHistoryViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_call_CallViewModel, ((Provider) callViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_chat_ChatViewModel, ((Provider) chatViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_home_HomeViewModel, ((Provider) homeViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_permissions_PermissionOnboardingViewModel, ((Provider) permissionOnboardingViewModelProvider)).put(LazyClassKeyProvider.com_company_app_presentation_settings_SettingsViewModel, ((Provider) settingsViewModelProvider)).build());
     }
 
     @Override
     public Map<Class<?>, Object> getHiltViewModelAssistedMap() {
-      return Collections.<Class<?>, Object>emptyMap();
+      return ImmutableMap.<Class<?>, Object>of();
     }
 
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
-      static String com_company_app_presentation_chat_ChatViewModel = "com.company.app.presentation.chat.ChatViewModel";
-
       static String com_company_app_presentation_settings_SettingsViewModel = "com.company.app.presentation.settings.SettingsViewModel";
-
-      static String com_company_app_presentation_history_CallDetailViewModel = "com.company.app.presentation.history.CallDetailViewModel";
 
       static String com_company_app_presentation_history_CallHistoryViewModel = "com.company.app.presentation.history.CallHistoryViewModel";
 
       static String com_company_app_presentation_ai_AskAiViewModel = "com.company.app.presentation.ai.AskAiViewModel";
 
-      static String com_company_app_presentation_call_CallViewModel = "com.company.app.presentation.call.CallViewModel";
-
       static String com_company_app_presentation_home_HomeViewModel = "com.company.app.presentation.home.HomeViewModel";
 
-      @KeepFieldType
-      ChatViewModel com_company_app_presentation_chat_ChatViewModel2;
+      static String com_company_app_presentation_call_CallViewModel = "com.company.app.presentation.call.CallViewModel";
+
+      static String com_company_app_presentation_chat_ChatViewModel = "com.company.app.presentation.chat.ChatViewModel";
+
+      static String com_company_app_presentation_history_CallDetailViewModel = "com.company.app.presentation.history.CallDetailViewModel";
+
+      static String com_company_app_presentation_permissions_PermissionOnboardingViewModel = "com.company.app.presentation.permissions.PermissionOnboardingViewModel";
 
       @KeepFieldType
       SettingsViewModel com_company_app_presentation_settings_SettingsViewModel2;
-
-      @KeepFieldType
-      CallDetailViewModel com_company_app_presentation_history_CallDetailViewModel2;
 
       @KeepFieldType
       CallHistoryViewModel com_company_app_presentation_history_CallHistoryViewModel2;
@@ -622,10 +635,19 @@ public final class DaggerApp_HiltComponents_SingletonC {
       AskAiViewModel com_company_app_presentation_ai_AskAiViewModel2;
 
       @KeepFieldType
+      HomeViewModel com_company_app_presentation_home_HomeViewModel2;
+
+      @KeepFieldType
       CallViewModel com_company_app_presentation_call_CallViewModel2;
 
       @KeepFieldType
-      HomeViewModel com_company_app_presentation_home_HomeViewModel2;
+      ChatViewModel com_company_app_presentation_chat_ChatViewModel2;
+
+      @KeepFieldType
+      CallDetailViewModel com_company_app_presentation_history_CallDetailViewModel2;
+
+      @KeepFieldType
+      PermissionOnboardingViewModel com_company_app_presentation_permissions_PermissionOnboardingViewModel2;
     }
 
     private static final class SwitchingProvider<T> implements Provider<T> {
@@ -667,7 +689,10 @@ public final class DaggerApp_HiltComponents_SingletonC {
           case 5: // com.company.app.presentation.home.HomeViewModel 
           return (T) new HomeViewModel(viewModelCImpl.observeCallsUseCase(), singletonCImpl.permissionsManagerProvider.get());
 
-          case 6: // com.company.app.presentation.settings.SettingsViewModel 
+          case 6: // com.company.app.presentation.permissions.PermissionOnboardingViewModel 
+          return (T) new PermissionOnboardingViewModel(singletonCImpl.permissionsManagerProvider.get());
+
+          case 7: // com.company.app.presentation.settings.SettingsViewModel 
           return (T) new SettingsViewModel(singletonCImpl.modelDownloadManagerProvider.get(), singletonCImpl.permissionsManagerProvider.get());
 
           default: throw new AssertionError(id);
@@ -797,9 +822,15 @@ public final class DaggerApp_HiltComponents_SingletonC {
 
     private Provider<TFLiteEmbedder> tFLiteEmbedderProvider;
 
+    private Provider<EmbeddingDao> provideEmbeddingDaoProvider;
+
+    private Provider<EmbeddingConverters> provideEmbeddingConvertersProvider;
+
     private Provider<VectorStore> provideVectorStoreProvider;
 
-    private Provider<MediaPipeLLM> mediaPipeLLMProvider;
+    private Provider<OkHttpClient> provideOkHttpClientProvider;
+
+    private Provider<LLMEngine> provideLLMEngineProvider;
 
     private Provider<VoipClient> voipClientProvider;
 
@@ -850,18 +881,21 @@ public final class DaggerApp_HiltComponents_SingletonC {
       this.callRecordingControllerProvider = DoubleCheck.provider(new SwitchingProvider<CallRecordingController>(singletonCImpl, 0));
       this.assetExtractorProvider = DoubleCheck.provider(new SwitchingProvider<AssetExtractor>(singletonCImpl, 7));
       this.tFLiteEmbedderProvider = DoubleCheck.provider(new SwitchingProvider<TFLiteEmbedder>(singletonCImpl, 6));
+      this.provideEmbeddingDaoProvider = DoubleCheck.provider(new SwitchingProvider<EmbeddingDao>(singletonCImpl, 9));
+      this.provideEmbeddingConvertersProvider = DoubleCheck.provider(new SwitchingProvider<EmbeddingConverters>(singletonCImpl, 10));
       this.provideVectorStoreProvider = DoubleCheck.provider(new SwitchingProvider<VectorStore>(singletonCImpl, 8));
-      this.mediaPipeLLMProvider = DoubleCheck.provider(new SwitchingProvider<MediaPipeLLM>(singletonCImpl, 9));
-      this.voipClientProvider = DoubleCheck.provider(new SwitchingProvider<VoipClient>(singletonCImpl, 10));
-      this.audioDecoderProvider = DoubleCheck.provider(new SwitchingProvider<AudioDecoder>(singletonCImpl, 13));
-      this.whisperEngineProvider = DoubleCheck.provider(new SwitchingProvider<WhisperEngine>(singletonCImpl, 12));
-      this.aIRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 11);
+      this.provideOkHttpClientProvider = DoubleCheck.provider(new SwitchingProvider<OkHttpClient>(singletonCImpl, 12));
+      this.provideLLMEngineProvider = DoubleCheck.provider(new SwitchingProvider<LLMEngine>(singletonCImpl, 11));
+      this.voipClientProvider = DoubleCheck.provider(new SwitchingProvider<VoipClient>(singletonCImpl, 13));
+      this.audioDecoderProvider = DoubleCheck.provider(new SwitchingProvider<AudioDecoder>(singletonCImpl, 16));
+      this.whisperEngineProvider = DoubleCheck.provider(new SwitchingProvider<WhisperEngine>(singletonCImpl, 15));
+      this.aIRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 14);
       this.bindAIRepositoryProvider = DoubleCheck.provider((Provider) aIRepositoryImplProvider);
-      this.chatRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 14);
+      this.chatRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 17);
       this.bindChatRepositoryProvider = DoubleCheck.provider((Provider) chatRepositoryImplProvider);
-      this.permissionsManagerProvider = DoubleCheck.provider(new SwitchingProvider<PermissionsManager>(singletonCImpl, 15));
-      this.modelDownloadManagerProvider = DoubleCheck.provider(new SwitchingProvider<ModelDownloadManager>(singletonCImpl, 16));
-      this.provideSignalingClientProvider = DoubleCheck.provider(new SwitchingProvider<SignalingClient>(singletonCImpl, 17));
+      this.permissionsManagerProvider = DoubleCheck.provider(new SwitchingProvider<PermissionsManager>(singletonCImpl, 18));
+      this.modelDownloadManagerProvider = DoubleCheck.provider(new SwitchingProvider<ModelDownloadManager>(singletonCImpl, 19));
+      this.provideSignalingClientProvider = DoubleCheck.provider(new SwitchingProvider<SignalingClient>(singletonCImpl, 20));
     }
 
     @Override
@@ -875,7 +909,7 @@ public final class DaggerApp_HiltComponents_SingletonC {
 
     @Override
     public Set<Boolean> getDisableFragmentGetContextFix() {
-      return Collections.<Boolean>emptySet();
+      return ImmutableSet.<Boolean>of();
     }
 
     @Override
@@ -921,39 +955,48 @@ public final class DaggerApp_HiltComponents_SingletonC {
           return (T) new AudioCaptureManager(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
           case 6: // com.company.app.data.ai.engine.TFLiteEmbedder 
-          return (T) new TFLiteEmbedder(singletonCImpl.assetExtractorProvider.get());
+          return (T) new TFLiteEmbedder(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.assetExtractorProvider.get());
 
           case 7: // com.company.app.core.util.AssetExtractor 
           return (T) new AssetExtractor(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
           case 8: // com.company.app.data.local.vector.VectorStore 
-          return (T) AIModule_ProvideVectorStoreFactory.provideVectorStore();
+          return (T) AIModule_ProvideVectorStoreFactory.provideVectorStore(singletonCImpl.provideEmbeddingDaoProvider.get(), singletonCImpl.provideEmbeddingConvertersProvider.get());
 
-          case 9: // com.company.app.data.ai.engine.MediaPipeLLM 
-          return (T) new MediaPipeLLM();
+          case 9: // com.company.app.data.local.dao.EmbeddingDao 
+          return (T) AIModule_ProvideEmbeddingDaoFactory.provideEmbeddingDao(singletonCImpl.provideDatabaseProvider.get());
 
-          case 10: // com.company.app.platform.call.VoipClient 
+          case 10: // com.company.app.data.local.vector.EmbeddingConverters 
+          return (T) AIModule_ProvideEmbeddingConvertersFactory.provideEmbeddingConverters();
+
+          case 11: // com.company.app.data.remote.llm.LLMEngine 
+          return (T) AIModule_ProvideLLMEngineFactory.provideLLMEngine(singletonCImpl.provideOkHttpClientProvider.get());
+
+          case 12: // okhttp3.OkHttpClient 
+          return (T) NetworkModule_ProvideOkHttpClientFactory.provideOkHttpClient();
+
+          case 13: // com.company.app.platform.call.VoipClient 
           return (T) new VoipClient();
 
-          case 11: // com.company.app.data.repository.AIRepositoryImpl 
-          return (T) new AIRepositoryImpl(singletonCImpl.whisperEngineProvider.get(), singletonCImpl.mediaPipeLLMProvider.get(), singletonCImpl.tFLiteEmbedderProvider.get(), singletonCImpl.provideVectorStoreProvider.get());
+          case 14: // com.company.app.data.repository.AIRepositoryImpl 
+          return (T) new AIRepositoryImpl(singletonCImpl.whisperEngineProvider.get(), singletonCImpl.provideLLMEngineProvider.get(), singletonCImpl.tFLiteEmbedderProvider.get(), singletonCImpl.provideVectorStoreProvider.get());
 
-          case 12: // com.company.app.data.ai.engine.WhisperEngine 
+          case 15: // com.company.app.data.ai.engine.WhisperEngine 
           return (T) new WhisperEngine(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.provideDispatchersProvider.get(), singletonCImpl.assetExtractorProvider.get(), singletonCImpl.audioDecoderProvider.get());
 
-          case 13: // com.company.app.core.util.AudioDecoder 
+          case 16: // com.company.app.core.util.AudioDecoder 
           return (T) new AudioDecoder();
 
-          case 14: // com.company.app.data.repository.ChatRepositoryImpl 
+          case 17: // com.company.app.data.repository.ChatRepositoryImpl 
           return (T) new ChatRepositoryImpl(singletonCImpl.messageDao(), singletonCImpl.provideEncryptionManagerProvider.get(), singletonCImpl.provideDispatchersProvider.get());
 
-          case 15: // com.company.app.presentation.permissions.PermissionsManager 
+          case 18: // com.company.app.presentation.permissions.PermissionsManager 
           return (T) new PermissionsManager(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule), singletonCImpl.audioCaptureManagerProvider.get());
 
-          case 16: // com.company.app.data.ai.manager.ModelDownloadManager 
+          case 19: // com.company.app.data.ai.manager.ModelDownloadManager 
           return (T) new ModelDownloadManager(singletonCImpl.assetExtractorProvider.get());
 
-          case 17: // com.company.app.data.remote.SignalingClient 
+          case 20: // com.company.app.data.remote.SignalingClient 
           return (T) NetworkModule_ProvideSignalingClientFactory.provideSignalingClient();
 
           default: throw new AssertionError(id);

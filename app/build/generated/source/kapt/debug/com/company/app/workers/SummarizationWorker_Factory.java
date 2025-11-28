@@ -2,8 +2,8 @@ package com.company.app.workers;
 
 import android.content.Context;
 import androidx.work.WorkerParameters;
-import com.company.app.data.ai.engine.MediaPipeLLM;
 import com.company.app.data.local.dao.TranscriptDao;
+import com.company.app.data.remote.llm.LLMEngine;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.QualifierMetadata;
 import dagger.internal.ScopeMetadata;
@@ -26,27 +26,27 @@ import javax.inject.Provider;
     "deprecation"
 })
 public final class SummarizationWorker_Factory {
-  private final Provider<MediaPipeLLM> llmProvider;
+  private final Provider<LLMEngine> llmEngineProvider;
 
   private final Provider<TranscriptDao> transcriptDaoProvider;
 
-  public SummarizationWorker_Factory(Provider<MediaPipeLLM> llmProvider,
+  public SummarizationWorker_Factory(Provider<LLMEngine> llmEngineProvider,
       Provider<TranscriptDao> transcriptDaoProvider) {
-    this.llmProvider = llmProvider;
+    this.llmEngineProvider = llmEngineProvider;
     this.transcriptDaoProvider = transcriptDaoProvider;
   }
 
   public SummarizationWorker get(Context appContext, WorkerParameters workerParams) {
-    return newInstance(appContext, workerParams, llmProvider.get(), transcriptDaoProvider.get());
+    return newInstance(appContext, workerParams, llmEngineProvider.get(), transcriptDaoProvider.get());
   }
 
-  public static SummarizationWorker_Factory create(Provider<MediaPipeLLM> llmProvider,
+  public static SummarizationWorker_Factory create(Provider<LLMEngine> llmEngineProvider,
       Provider<TranscriptDao> transcriptDaoProvider) {
-    return new SummarizationWorker_Factory(llmProvider, transcriptDaoProvider);
+    return new SummarizationWorker_Factory(llmEngineProvider, transcriptDaoProvider);
   }
 
   public static SummarizationWorker newInstance(Context appContext, WorkerParameters workerParams,
-      MediaPipeLLM llm, TranscriptDao transcriptDao) {
-    return new SummarizationWorker(appContext, workerParams, llm, transcriptDao);
+      LLMEngine llmEngine, TranscriptDao transcriptDao) {
+    return new SummarizationWorker(appContext, workerParams, llmEngine, transcriptDao);
   }
 }

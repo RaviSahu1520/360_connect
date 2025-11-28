@@ -1,11 +1,9 @@
 package com.company.app.platform.call
 
-import android.app.Notification
-import android.os.Build
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.app.Notification
 import android.view.accessibility.AccessibilityEvent
-import androidx.annotation.RequiresApi
 import com.company.app.domain.model.CallInfo
 import com.company.app.domain.model.CallType
 import com.company.app.platform.recording.CallRecordingController
@@ -19,7 +17,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 class CallDetectionService : AccessibilityService() {
 
     private lateinit var callRecordingController: CallRecordingController
@@ -41,9 +38,11 @@ class CallDetectionService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         serviceInfo = serviceInfo.apply {
-            eventTypes = AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED
+            eventTypes = AccessibilityEvent.TYPES_ALL_MASK
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
-            notificationTimeout = 100
+            notificationTimeout = 0
+            flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
+                AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
         }
     }
 

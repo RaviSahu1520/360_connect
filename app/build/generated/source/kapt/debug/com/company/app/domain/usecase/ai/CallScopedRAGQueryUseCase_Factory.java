@@ -1,8 +1,8 @@
 package com.company.app.domain.usecase.ai;
 
-import com.company.app.data.ai.engine.MediaPipeLLM;
 import com.company.app.data.ai.engine.TFLiteEmbedder;
 import com.company.app.data.local.vector.VectorStore;
+import com.company.app.data.remote.llm.LLMEngine;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
 import dagger.internal.QualifierMetadata;
@@ -30,27 +30,27 @@ public final class CallScopedRAGQueryUseCase_Factory implements Factory<CallScop
 
   private final Provider<VectorStore> vectorStoreProvider;
 
-  private final Provider<MediaPipeLLM> llmProvider;
+  private final Provider<LLMEngine> llmEngineProvider;
 
   public CallScopedRAGQueryUseCase_Factory(Provider<TFLiteEmbedder> embedderProvider,
-      Provider<VectorStore> vectorStoreProvider, Provider<MediaPipeLLM> llmProvider) {
+      Provider<VectorStore> vectorStoreProvider, Provider<LLMEngine> llmEngineProvider) {
     this.embedderProvider = embedderProvider;
     this.vectorStoreProvider = vectorStoreProvider;
-    this.llmProvider = llmProvider;
+    this.llmEngineProvider = llmEngineProvider;
   }
 
   @Override
   public CallScopedRAGQueryUseCase get() {
-    return newInstance(embedderProvider.get(), vectorStoreProvider.get(), llmProvider.get());
+    return newInstance(embedderProvider.get(), vectorStoreProvider.get(), llmEngineProvider.get());
   }
 
   public static CallScopedRAGQueryUseCase_Factory create(Provider<TFLiteEmbedder> embedderProvider,
-      Provider<VectorStore> vectorStoreProvider, Provider<MediaPipeLLM> llmProvider) {
-    return new CallScopedRAGQueryUseCase_Factory(embedderProvider, vectorStoreProvider, llmProvider);
+      Provider<VectorStore> vectorStoreProvider, Provider<LLMEngine> llmEngineProvider) {
+    return new CallScopedRAGQueryUseCase_Factory(embedderProvider, vectorStoreProvider, llmEngineProvider);
   }
 
   public static CallScopedRAGQueryUseCase newInstance(TFLiteEmbedder embedder,
-      VectorStore vectorStore, MediaPipeLLM llm) {
-    return new CallScopedRAGQueryUseCase(embedder, vectorStore, llm);
+      VectorStore vectorStore, LLMEngine llmEngine) {
+    return new CallScopedRAGQueryUseCase(embedder, vectorStore, llmEngine);
   }
 }

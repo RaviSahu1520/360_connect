@@ -50,10 +50,14 @@
         <service
             android:name="com.company.app.platform.call.CallDetectionService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:enabled="true"
             android:exported="false">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
             <meta-data
                 android:name="android.accessibilityservice"
-                android:resource="@xml/call_accessibility_service" />
+                android:resource="@xml/accessibility_service_config" />
         </service>
 
         <!-- ================== NOTIFICATION LISTENER ================== -->

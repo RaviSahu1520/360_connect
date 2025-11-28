@@ -6,8 +6,8 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.company.app.data.ai.engine.MediaPipeLLM
 import com.company.app.data.local.dao.TranscriptDao
+import com.company.app.data.remote.llm.LLMEngine
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
@@ -15,7 +15,7 @@ import dagger.assisted.AssistedInject
 class SummarizationWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
-    private val llm: MediaPipeLLM,
+    private val llmEngine: LLMEngine,
     private val transcriptDao: TranscriptDao
 ) : CoroutineWorker(appContext, workerParams) {
 
@@ -30,7 +30,8 @@ class SummarizationWorker @AssistedInject constructor(
         } ?: return Result.failure()
 
         return runCatching {
-            val summary = llm.summarize(transcript.fullText)
+            val prompt = "Summarize this text briefly and clearly:\n${transcript.fullText}"
+            val summary = llmEngine.generateResponse(prompt)
             transcriptDao.updateSummary(transcript.id, summary, System.currentTimeMillis())
             Log.d(TAG, "Summary generated for transcript=${transcript.id}")
             Result.success(

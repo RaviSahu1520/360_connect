@@ -1,9 +1,9 @@
 package com.company.app.data.repository
 
-import com.company.app.data.ai.engine.MediaPipeLLM
 import com.company.app.data.ai.engine.TFLiteEmbedder
 import com.company.app.data.ai.engine.WhisperEngine
 import com.company.app.data.local.vector.VectorStore
+import com.company.app.data.remote.llm.LLMEngine
 import com.company.app.domain.model.TranscriptChunk
 import com.company.app.domain.repository.AIRepository
 import kotlinx.coroutines.flow.Flow
@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 class AIRepositoryImpl @Inject constructor(
     private val whisperEngine: WhisperEngine,
-    private val llm: MediaPipeLLM,
+    private val llmEngine: LLMEngine,
     private val embedder: TFLiteEmbedder,
     private val vectorStore: VectorStore
 ) : AIRepository {
@@ -26,7 +26,10 @@ class AIRepositoryImpl @Inject constructor(
         emit(text)
     }
 
-    override suspend fun summarize(text: String): String = llm.summarize(text)
+    override suspend fun summarize(text: String): String {
+        val prompt = "Summarize this text briefly and clearly:\n$text"
+        return llmEngine.generateResponse(prompt)
+    }
 
     override suspend fun queryRag(prompt: String): List<TranscriptChunk> {
         val embedding = embedder.embed(prompt)
@@ -35,7 +38,11 @@ class AIRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun indexTranscript(transcriptId: Long, fullText: String) {
+    override suspend fun generateResponse(prompt: String): Result<String> = runCatching {
+        llmEngine.generateResponse(prompt)
+    }
+
+    private suspend fun indexTranscript(transcriptId: Long, fullText: String) {
         if (fullText.isBlank()) return
         fullText.chunked(240).forEach { chunk ->
             val embedding = embedder.embed(chunk)

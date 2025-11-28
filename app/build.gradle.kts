@@ -17,6 +17,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        buildConfigField("String", "ANTHROPIC_BASE_URL", "\"https://api.z.ai/api/anthropic\"")
+        buildConfigField("String", "ANTHROPIC_AUTH_TOKEN", "\"aa24b0cab3874983bb3fd76b00ac54d0.xln7iIobB43DtsDh\"")
+
         externalNativeBuild {
             cmake {
                 arguments += listOf("-DANDROID_STL=c++_shared")
@@ -149,6 +152,16 @@ dependencies {
     // DATE/TIME
     // ==============================
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+
+    // ==============================
+    // JSON
+    // ==============================
+    implementation("com.google.code.gson:gson:2.11.0")
+
+    // ==============================
+    // MEDIAPIPE (Text Embedding)
+    // ==============================
+    implementation("com.google.mediapipe:tasks-text:0.10.14")
 
     // ==============================
     // TESTING

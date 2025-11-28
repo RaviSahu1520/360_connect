@@ -24,21 +24,27 @@ class AskAiViewModel @Inject constructor(
     fun submitQuery() {
         val currentQuery = _uiState.value.query
         if (currentQuery.isBlank()) return
-        _uiState.value = _uiState.value.copy(isLoading = true, error = null, answer = null)
+        _uiState.value = _uiState.value.copy(aiState = AiState.Loading)
         viewModelScope.launch {
             val result = ragQueryUseCase(currentQuery)
-            _uiState.value = if (result.isSuccess) {
-                _uiState.value.copy(isLoading = false, answer = result.getOrNull())
-            } else {
-                _uiState.value.copy(isLoading = false, error = result.exceptionOrNull()?.message)
-            }
+            _uiState.value = result.fold(
+                onSuccess = { answer ->
+                    val safeAnswer = if (answer.isBlank()) "Error: Empty response" else answer
+                    _uiState.value.copy(aiState = AiState.Success(safeAnswer))
+                },
+                onFailure = { error ->
+                    _uiState.value.copy(aiState = AiState.Error(error.message ?: "Unknown error"))
+                }
+            )
         }
     }
 }
 
 data class AskAiUiState(
     val query: String = "",
-    val isLoading: Boolean = false,
-    val answer: String? = null,
-    val error: String? = null
-)
+    val aiState: AiState = AiState.Idle
+) {
+    val isLoading: Boolean get() = aiState is AiState.Loading
+    val answer: String? get() = (aiState as? AiState.Success)?.answer
+    val error: String? get() = (aiState as? AiState.Error)?.message
+}
